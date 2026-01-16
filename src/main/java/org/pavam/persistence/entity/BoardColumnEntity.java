@@ -9,5 +9,6 @@ public class BoardColumnEntity {
     private String description;
     private int order;
     private BoardColumnKindEnum kind;
+    private BoardEntity boardEntity = new BoardEntity();
 
 }
