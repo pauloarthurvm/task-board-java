@@ -6,7 +6,10 @@ import org.pavam.persistence.entity.BoardColumnEntity;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
+
+import static org.pavam.persistence.entity.BoardColumnKindEnum.getKindEnumByName;
 
 @AllArgsConstructor
 public class BoardColumnDAO {
@@ -31,11 +34,21 @@ public class BoardColumnDAO {
     }
 
     public List<BoardColumnEntity> findByBoardId(Long boardId) throws SQLException {
-        var sqlCommand = "SELECT * FROM BOARD_COLUMNS WHERE board_id = ?";
+        List<BoardColumnEntity> boardColumnEntityList = new ArrayList<>();
+        var sqlCommand = "SELECT * FROM BOARD_COLUMNS WHERE board_id = ? ORDER BY `order`";
         try(var statement = connection.prepareStatement(sqlCommand)) {
             statement.setLong(1, boardId);
             statement.executeQuery();
-            return null;
+            var resultSet = statement.getResultSet();
+            while(resultSet.next()) {
+                var boardColumnEntity = new BoardColumnEntity();
+                boardColumnEntity.setId(resultSet.getLong("id"));
+                boardColumnEntity.setDescription(resultSet.getString("description"));
+                boardColumnEntity.setOrder(resultSet.getInt("order"));
+                boardColumnEntity.setKind(getKindEnumByName(resultSet.getString("kind")));
+                boardColumnEntityList.add(boardColumnEntity);
+            }
+            return boardColumnEntityList;
         }
     }
 }
