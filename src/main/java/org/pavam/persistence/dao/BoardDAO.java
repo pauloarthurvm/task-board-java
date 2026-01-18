@@ -26,17 +26,17 @@ public class BoardDAO {
     }
 
     public final void delete(Long id) throws SQLException {
-        var sqlCommand = "DELETE FROM BOARD WHERE id = ?";
+        var sqlCommand = "DELETE FROM BOARDS WHERE id = ?";
         int countDeletedRows;
         try(var statement = connection.prepareStatement(sqlCommand)) {
             statement.setLong(1, id);
             countDeletedRows = statement.executeUpdate();
-            System.out.printf("Delete %d rows.", countDeletedRows);
+            System.out.printf("Deleted %d rows.\n", countDeletedRows);
         }
     }
 
     public final Optional<BoardEntity> findById(Long id) throws SQLException {
-        var sqlCommand = "SELECT id, name FROM BOARD WHERE id = ?";
+        var sqlCommand = "SELECT id, name FROM BOARDS WHERE id = ?";
         try(var statement = connection.prepareStatement(sqlCommand)) {
             statement.setLong(1, id);
             statement.executeQuery();
@@ -52,7 +52,7 @@ public class BoardDAO {
     }
 
     public final boolean exists(Long id) throws SQLException {
-        var sqlCommand = "SELECT 1 FROM BOARD WHERE id = ?";
+        var sqlCommand = "SELECT 1 FROM BOARDS WHERE id = ?";
         try(var statement = connection.prepareStatement(sqlCommand)) {
             statement.setLong(1, id);
             statement.executeQuery();

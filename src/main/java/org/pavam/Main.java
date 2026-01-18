@@ -1,6 +1,7 @@
 package org.pavam;
 
 import org.pavam.persistence.migration.MigrationStrategy;
+import org.pavam.ui.simulator.MainMenu;
 
 import java.sql.SQLException;
 
@@ -12,9 +13,6 @@ public class Main {
         try(var connection = getConnection()) {
             new MigrationStrategy(connection).executeMigration();
         }
-//        System.out.println(
-//                Thread.currentThread().getContextClassLoader()
-//                        .getResource("db/changelog/db.changelog-master.yml")
-//        );
+        new MainMenu().execute();
     }
 }

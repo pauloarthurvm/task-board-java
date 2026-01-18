@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Scanner;
 
 import static org.pavam.persistence.config.ConnectionConfig.getConnection;
-import static org.pavam.persistence.entity.BoardColumnKindEnum.INITIAL;
+import static org.pavam.persistence.entity.BoardColumnKindEnum.*;
 
 public class MainMenu {
 
@@ -47,7 +47,6 @@ public class MainMenu {
         System.out.println("Will the board have additional columns?\nInsert the number of new columns, or 0 to none.");
         var additionalColumns = scanner.nextInt();
         List<BoardColumnEntity> boardColumnEntityList = new ArrayList<>();
-        boardEntity.setBoardColumns(boardColumnEntityList);
 
         System.out.println("Initial column name: ");
         var initialColumnName = scanner.next();
@@ -57,19 +56,20 @@ public class MainMenu {
         for(int i = 0; i < additionalColumns; i++) {
             System.out.println("Pending column name: ");
             var columnName = scanner.next();
-            BoardColumnEntity pendingColumnEntity = createBoardColumn(columnName, INITIAL, i+1);
+            BoardColumnEntity pendingColumnEntity = createBoardColumn(columnName, PENDING, i+1);
             boardColumnEntityList.add(pendingColumnEntity);
         }
 
         System.out.println("Final column name: ");
         var finalColumnName = scanner.next();
-        BoardColumnEntity finalColumnEntity = createBoardColumn(initialColumnName, INITIAL, additionalColumns + 1);
+        BoardColumnEntity finalColumnEntity = createBoardColumn(finalColumnName, FINAL, additionalColumns + 1);
         boardColumnEntityList.add(finalColumnEntity);
 
         System.out.println("Canceled column name: ");
         var canceledColumnName = scanner.next();
-        BoardColumnEntity canceledColumnEntity = createBoardColumn(initialColumnName, INITIAL, additionalColumns + 2);
+        BoardColumnEntity canceledColumnEntity = createBoardColumn(canceledColumnName, CANCEL, additionalColumns + 2);
         boardColumnEntityList.add(canceledColumnEntity);
+        boardEntity.setBoardColumns(boardColumnEntityList);
 
         try(var connection = getConnection()) {
             var boardService = new BoardService(connection);
@@ -91,12 +91,12 @@ public class MainMenu {
     }
 
     private void deleteBoard() throws SQLException {
-        System.out.println("Type boards ID yto be deleted:");
+        System.out.println("Type boards ID to be deleted:");
         int boardId = scanner.nextInt();
         try(var connection = getConnection()) {
             var boardService = new BoardService(connection);
             if(boardService.delete(boardId)) {
-                System.out.println("Board deleted");
+                System.out.println("Board deleted.");
             } else {
                 System.out.printf("Board not found - ID %d\n", boardId);
             }

@@ -26,9 +26,11 @@ public class BoardColumnDAO {
             statement.setInt(i++, boardColumnEntity.getOrder());
             statement.setString(i++, boardColumnEntity.getKind().name());
             statement.setLong(i, boardColumnEntity.getBoardEntity().getId());
+            statement.executeUpdate();
             if(statement instanceof StatementImpl impl) {
                 boardColumnEntity.setId(impl.getLastInsertID());
             }
+            System.out.println("New Board Column saved: " + boardColumnEntity.toString());
             return boardColumnEntity;
         }
     }
