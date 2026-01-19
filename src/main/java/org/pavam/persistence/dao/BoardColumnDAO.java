@@ -2,6 +2,7 @@ package org.pavam.persistence.dao;
 
 import com.mysql.cj.jdbc.StatementImpl;
 import lombok.AllArgsConstructor;
+import org.pavam.dto.BoardColumnDTO;
 import org.pavam.persistence.entity.BoardColumnEntity;
 
 import java.sql.Connection;
@@ -51,6 +52,37 @@ public class BoardColumnDAO {
                 boardColumnEntityList.add(boardColumnEntity);
             }
             return boardColumnEntityList;
+        }
+    }
+
+    public List<BoardColumnDTO> findByBoardIdWithDetails(final Long boardId) throws SQLException {
+        List<BoardColumnDTO> boardColumnDTOList = new ArrayList<>();
+        var sqlCommand = """
+            SELECT
+                bc.id,
+                bc.description,
+                bc.kind,
+                COUNT(SELECT id 
+                        FROM CARDS c 
+                        WHERE c.board_column_id = bc.id) cards_amount
+            FROM BOARD_COLUMNS bc 
+            WHERE board_id = ? 
+            ORDER BY `order`
+        """;
+        try(var statement = connection.prepareStatement(sqlCommand)) {
+            statement.setLong(1, boardId);
+            statement.executeQuery();
+            var resultSet = statement.getResultSet();
+            while(resultSet.next()) {
+                var boardColumnDto = new BoardColumnDTO(
+                        resultSet.getLong("id"),
+                        resultSet.getString("description"),
+                        getKindEnumByName(resultSet.getString("kind")),
+                        resultSet.getInt("cards_amount")
+                );
+                boardColumnDTOList.add(boardColumnDto);
+            }
+            return boardColumnDTOList;
         }
     }
 }

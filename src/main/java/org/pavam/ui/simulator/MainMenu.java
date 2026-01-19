@@ -16,7 +16,7 @@ import static org.pavam.persistence.entity.BoardColumnKindEnum.*;
 
 public class MainMenu {
 
-    private final Scanner scanner = new Scanner(System.in);
+    private final Scanner scanner = new Scanner(System.in).useDelimiter("\n");
 
     public void execute() throws SQLException {
         var option = -1;
