@@ -2,6 +2,7 @@ package org.pavam.ui.simulator;
 
 import lombok.AllArgsConstructor;
 import org.pavam.persistence.entity.BoardEntity;
+import org.pavam.service.BoardColumnQueryService;
 import org.pavam.service.BoardQueryService;
 
 import java.sql.SQLException;
@@ -82,7 +83,27 @@ public class BoardMenu {
         }
     }
 
-    private void showColumnWithCards() {
+    private void showColumnWithCards() throws SQLException {
+        var columnsId = boardEntity.getBoardColumns().stream().map(column -> column.getId()).toList();
+        var selectedColumnId = -1L;
+        while (!columnsId.contains(selectedColumnId)) {
+            System.out.printf("Select a column ID from board %s\n", boardEntity.getName());
+            boardEntity.getBoardColumns().forEach(column -> {
+                System.out.printf("Column %d - %s - Kind %s", column.getId(), column.getDescription(), column.getKind());
+            });
+            selectedColumnId = scanner.nextLong();
+        }
+        try(var connection = getConnection()) {
+            var columnOptional = new BoardColumnQueryService(connection).findById(selectedColumnId);
+            columnOptional.ifPresent(column -> {
+                System.out.printf("Column %s kind %s\n", column.getDescription(), column.getKind());
+                column.getCardEntityList().forEach(card -> {
+                    System.out.printf("Card %d - %s - Description: %s\n", card.getId(), card.getTitle(), card.getDescription());
+                });
+            });
+        }
+
+
     }
 
     private void showCard() {

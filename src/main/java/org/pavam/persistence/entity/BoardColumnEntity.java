@@ -1,6 +1,12 @@
 package org.pavam.persistence.entity;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
+
+import javax.smartcardio.Card;
+import java.util.ArrayList;
+import java.util.List;
 
 @Data
 public class BoardColumnEntity {
@@ -10,5 +16,8 @@ public class BoardColumnEntity {
     private int order;
     private BoardColumnKindEnum kind;
     private BoardEntity boardEntity = new BoardEntity();
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private List<CardEntity> cardEntityList = new ArrayList<>();
 
 }

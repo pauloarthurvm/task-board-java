@@ -4,11 +4,15 @@ import com.mysql.cj.jdbc.StatementImpl;
 import lombok.AllArgsConstructor;
 import org.pavam.dto.BoardColumnDTO;
 import org.pavam.persistence.entity.BoardColumnEntity;
+import org.pavam.persistence.entity.BoardColumnKindEnum;
+import org.pavam.persistence.entity.CardEntity;
 
+import javax.swing.text.html.Option;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import static org.pavam.persistence.entity.BoardColumnKindEnum.getKindEnumByName;
 
@@ -83,6 +87,41 @@ public class BoardColumnDAO {
                 boardColumnDTOList.add(boardColumnDto);
             }
             return boardColumnDTOList;
+        }
+    }
+
+
+    public Optional<BoardColumnEntity> findById(final Long columnId) throws SQLException {
+        var sqlCommand = """
+            SELECT
+                bc.description,
+                bc.kind,
+                c.id,
+                c.title,
+                c.description
+            FROM BOARD_COLUMNS bc
+            INNER JOIN CARDS c
+            ON c.board_column_id = bc.id
+            WHERE bc.id = ?;
+        """;
+        try(var statement = connection.prepareStatement(sqlCommand)) {
+            statement.setLong(1, columnId);
+            statement.executeQuery();
+            var resultSet = statement.getResultSet();
+            if(resultSet.next()) {
+                var boardColumnEntity = new BoardColumnEntity();
+                boardColumnEntity.setDescription(resultSet.getString("bc.description"));
+                boardColumnEntity.setKind(getKindEnumByName(resultSet.getString("bc.kind")));
+                do {
+                    var cardEntity = new CardEntity();
+                    cardEntity.setId(resultSet.getLong("c.id"));
+                    cardEntity.setTitle(resultSet.getString("c.title"));
+                    cardEntity.setDescription(resultSet.getString("c.description"));
+                    boardColumnEntity.getCardEntityList().add(cardEntity);
+                } while(resultSet.next());
+                return Optional.of(boardColumnEntity);
+            }
+            return Optional.empty();
         }
     }
 }
