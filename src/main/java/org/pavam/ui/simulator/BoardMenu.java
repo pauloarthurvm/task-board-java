@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import org.pavam.persistence.entity.BoardEntity;
 import org.pavam.service.BoardColumnQueryService;
 import org.pavam.service.BoardQueryService;
+import org.pavam.service.CardQueryService;
 
 import java.sql.SQLException;
 import java.util.Scanner;
@@ -106,7 +107,20 @@ public class BoardMenu {
 
     }
 
-    private void showCard() {
-        
+    private void showCard() throws SQLException {
+        System.out.println("Type the Card ID you want to see:");
+        var cardID = scanner.nextLong();
+        try(var connection = getConnection()) {
+            new CardQueryService(connection).findById(cardID).ifPresentOrElse(
+                    c -> {
+                        System.out.printf("Card %s - %s\n", c.id(), c.title());
+                        System.out.printf("Description - %s\n");
+                        System.out.println(c.blocked() ? ("Blocked. Reason: " + c.blockReason()) : "Not blocked");
+                        System.out.printf("Blocked %d times\n", c.blocksAmount());
+                        System.out.printf("In column: %s\n", c.columnName());
+                    },
+                    () -> System.out.printf("Card ID not found: %d\n", cardID)
+            );
+        }
     }
 }
