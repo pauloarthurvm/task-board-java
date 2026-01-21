@@ -1,6 +1,7 @@
 package org.pavam.ui.simulator;
 
 import lombok.AllArgsConstructor;
+import org.pavam.dto.BoardColumnInfoDTO;
 import org.pavam.persistence.entity.BoardEntity;
 import org.pavam.persistence.entity.CardEntity;
 import org.pavam.service.BoardColumnQueryService;
@@ -8,6 +9,7 @@ import org.pavam.service.BoardQueryService;
 import org.pavam.service.CardQueryService;
 import org.pavam.service.CardService;
 
+import javax.smartcardio.Card;
 import java.sql.SQLException;
 import java.util.Scanner;
 
@@ -70,7 +72,17 @@ public class BoardMenu {
         }
     }
 
-    private void moveCard() {
+    private void moveCard() throws SQLException {
+        System.out.println("Insert Card ID to be moved:");
+        var cardIdToMove = scanner.nextLong();
+        var boardColumnInfoDtoList = boardEntity.getBoardColumns().stream()
+                .map(bc -> new BoardColumnInfoDTO(bc.getId(), bc.getOrder(), bc.getKind())).toList();
+        try(var connection = getConnection()) {
+            var cardService = new CardService(connection);
+            cardService.moveToNextColumn(cardIdToMove, boardColumnInfoDtoList);
+        } catch(RuntimeException ex) {
+            System.out.println(ex.getMessage());
+        }
     }
 
     private void blockCard() {

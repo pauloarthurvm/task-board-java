@@ -1,11 +1,15 @@
 package org.pavam.service;
 
 import lombok.AllArgsConstructor;
+import org.pavam.dto.BoardColumnInfoDTO;
 import org.pavam.persistence.dao.CardDAO;
 import org.pavam.persistence.entity.CardEntity;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.List;
+
+import static org.pavam.persistence.entity.BoardColumnKindEnum.FINAL;
 
 @AllArgsConstructor
 public class CardService {
@@ -24,4 +28,31 @@ public class CardService {
         }
     }
 
+    public void moveToNextColumn(final Long cardIdToMove, final List<BoardColumnInfoDTO> boardColumnInfoDtoList) throws SQLException {
+        try {
+            var cardDao = new CardDAO(connection);
+            var optionalCardDetailsDto = cardDao.findCardById(cardIdToMove);
+            var cardDetailsDto = optionalCardDetailsDto.orElseThrow(() ->
+                    new RuntimeException("Not found - Card ID %d".formatted(cardIdToMove)));
+            if(cardDetailsDto.blocked()) {
+                throw new RuntimeException("Card is blocked - Card ID %d".formatted(cardIdToMove));
+            }
+            var currentColumnInfoDto = boardColumnInfoDtoList.stream()
+                    .filter(bcinfoDto -> bcinfoDto.id().equals(cardDetailsDto.columnId()))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalStateException("Informed card belongs to another board"));
+            if(currentColumnInfoDto.kind().equals(FINAL)) {
+                throw new RuntimeException("Card is already in Final Column");
+            }
+            var nextColumnInfoDto = boardColumnInfoDtoList.stream()
+                    .filter(bc -> bc.order() == currentColumnInfoDto.order() + 1)
+                    .findFirst()
+                    .orElseThrow();
+            cardDao.moveToColumn(cardIdToMove, nextColumnInfoDto.id());
+            connection.commit();
+        } catch (SQLException ex) {
+            connection.rollback();
+            throw ex;
+        }
+    }
 }
