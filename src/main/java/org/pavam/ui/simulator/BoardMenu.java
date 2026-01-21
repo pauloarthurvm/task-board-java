@@ -91,7 +91,19 @@ public class BoardMenu {
     private void unblockCard() {
     }
 
-    private void cancelCard() {
+    private void cancelCard() throws SQLException {
+        System.out.println("Card ID to Cancel");
+        var cardIdToCancel = scanner.nextLong();
+        var cancelColumnEntity = boardEntity.getCancelColumn();
+        var boardColumnInfoDtoList = boardEntity.getBoardColumns().stream()
+                .map(bc -> new BoardColumnInfoDTO(bc.getId(), bc.getOrder(), bc.getKind())).toList();
+        try(var connection = getConnection()) {
+            var cardService = new CardService(connection);
+            cardService.cancelCard(cardIdToCancel, cancelColumnEntity.getId(), boardColumnInfoDtoList);
+            System.out.println("Card canceled.");
+        } catch(RuntimeException ex) {
+            System.out.println(ex.getMessage());
+        }
     }
 
     private void showBoard() throws SQLException {

@@ -47,8 +47,38 @@ public class CardService {
             var nextColumnInfoDto = boardColumnInfoDtoList.stream()
                     .filter(bc -> bc.order() == currentColumnInfoDto.order() + 1)
                     .findFirst()
-                    .orElseThrow();
+                    .orElseThrow(() -> new IllegalStateException("Card is Canceled - Card column: %s".formatted(cardDetailsDto.columnName())));
             cardDao.moveToColumn(cardIdToMove, nextColumnInfoDto.id());
+            connection.commit();
+        } catch (SQLException ex) {
+            connection.rollback();
+            throw ex;
+        }
+    }
+
+    public void cancelCard(final long cardIdToCancel,
+                           final Long cancelColumnId,
+                           final List<BoardColumnInfoDTO> boardColumnInfoDtoList) throws SQLException {
+        try {
+            var cardDao = new CardDAO(connection);
+            var optionalCardDetailsDto = cardDao.findCardById(cardIdToCancel);
+            var cardDetailsDto = optionalCardDetailsDto.orElseThrow(() ->
+                    new RuntimeException("Not found - Card ID %d".formatted(cardIdToCancel)));
+            if(cardDetailsDto.blocked()) {
+                throw new RuntimeException("Card is blocked - Card ID %d".formatted(cardIdToCancel));
+            }
+            var currentColumnInfoDto = boardColumnInfoDtoList.stream()
+                    .filter(bcinfoDto -> bcinfoDto.id().equals(cardDetailsDto.columnId()))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalStateException("Informed card belongs to another board"));
+            if(currentColumnInfoDto.kind().equals(FINAL)) {
+                throw new RuntimeException("Card is already in Final Column");
+            }
+            boardColumnInfoDtoList.stream()
+                    .filter(bc -> bc.order() == currentColumnInfoDto.order() + 1)
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalStateException("Card is Canceled - Card column: %s".formatted(cardDetailsDto.columnName())));
+            cardDao.moveToColumn(cardIdToCancel, cancelColumnId);
             connection.commit();
         } catch (SQLException ex) {
             connection.rollback();
