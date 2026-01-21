@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import static java.util.Objects.isNull;
 import static org.pavam.persistence.entity.BoardColumnKindEnum.getKindEnumByName;
 
 @AllArgsConstructor
@@ -62,17 +63,15 @@ public class BoardColumnDAO {
     public List<BoardColumnDTO> findByBoardIdWithDetails(final Long boardId) throws SQLException {
         List<BoardColumnDTO> boardColumnDTOList = new ArrayList<>();
         var sqlCommand = """
-            SELECT
-                bc.id,
-                bc.description,
-                bc.kind,
-                COUNT(SELECT id 
-                        FROM CARDS c 
-                        WHERE c.board_column_id = bc.id) cards_amount
-            FROM BOARD_COLUMNS bc 
-            WHERE board_id = ? 
-            ORDER BY `order`
-        """;
+            SELECT bc.id, 
+                   bc.description, 
+                   bc.kind,
+                   (SELECT COUNT(c.id) FROM CARDS c 
+                                       WHERE c.board_column_id = bc.id) cards_amount 
+            FROM BOARD_COLUMNS bc
+            WHERE board_id = ?
+            ORDER BY `order`;
+            """;
         try(var statement = connection.prepareStatement(sqlCommand)) {
             statement.setLong(1, boardId);
             statement.executeQuery();
@@ -100,7 +99,7 @@ public class BoardColumnDAO {
                 c.title,
                 c.description
             FROM BOARD_COLUMNS bc
-            INNER JOIN CARDS c
+            LEFT JOIN CARDS c
             ON c.board_column_id = bc.id
             WHERE bc.id = ?;
         """;
@@ -113,6 +112,9 @@ public class BoardColumnDAO {
                 boardColumnEntity.setDescription(resultSet.getString("bc.description"));
                 boardColumnEntity.setKind(getKindEnumByName(resultSet.getString("bc.kind")));
                 do {
+                    if(isNull(resultSet.getString("c.title"))) {
+                        break;
+                    }
                     var cardEntity = new CardEntity();
                     cardEntity.setId(resultSet.getLong("c.id"));
                     cardEntity.setTitle(resultSet.getString("c.title"));
