@@ -97,7 +97,17 @@ public class BoardMenu {
         }
     }
 
-    private void unblockCard() {
+    private void unblockCard() throws SQLException {
+        System.out.println("Card ID to be unblocked:");
+        var cardIdToUnblock = scanner.nextLong();
+        System.out.println("Unblocking reason:");
+        var unblockingReason = scanner.next();
+        var boardColumnInfoDtoList = boardEntity.getBoardColumns().stream()
+                .map(bc -> new BoardColumnInfoDTO(bc.getId(), bc.getOrder(), bc.getKind())).toList();
+        try(var connection = getConnection()) {
+            new CardService(connection).unblock(cardIdToUnblock, unblockingReason, boardColumnInfoDtoList);
+        }
+
     }
 
     private void cancelCard() throws SQLException {

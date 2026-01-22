@@ -114,4 +114,27 @@ public class CardService {
             throw ex;
         }
     }
+
+    public void unblock(final long cardIdToUnblock,
+                        final String unblockingReason,
+                        final List<BoardColumnInfoDTO> boardColumnInfoDtoList) throws SQLException{
+        try {
+            var cardDao = new CardDAO(connection);
+            var optionalCardDetailsDto = cardDao.findCardById(cardIdToUnblock);
+            var cardDetailsDto = optionalCardDetailsDto.orElseThrow(() ->
+                    new RuntimeException("Not found - Card ID %d".formatted(cardIdToUnblock)));
+            if(!cardDetailsDto.blocked()) {
+                throw new RuntimeException("Card is already unblocked - Card ID %d".formatted(cardIdToUnblock));
+            }
+            var currentColumnInfoDto = boardColumnInfoDtoList.stream()
+                    .filter(bcinfoDto -> bcinfoDto.id().equals(cardDetailsDto.columnId()))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalStateException("Informed card belongs to another board"));
+            new BlockDAO(connection).unblockCard(cardIdToUnblock, unblockingReason);
+            connection.commit();
+        } catch (SQLException ex) {
+            connection.rollback();
+            throw ex;
+        }
+    }
 }
