@@ -2,6 +2,7 @@ package org.pavam.service;
 
 import lombok.AllArgsConstructor;
 import org.pavam.dto.BoardColumnInfoDTO;
+import org.pavam.persistence.dao.BlockDAO;
 import org.pavam.persistence.dao.CardDAO;
 import org.pavam.persistence.entity.CardEntity;
 
@@ -9,6 +10,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
 
+import static org.pavam.persistence.entity.BoardColumnKindEnum.CANCEL;
 import static org.pavam.persistence.entity.BoardColumnKindEnum.FINAL;
 
 @AllArgsConstructor
@@ -79,6 +81,33 @@ public class CardService {
                     .findFirst()
                     .orElseThrow(() -> new IllegalStateException("Card is Canceled - Card column: %s".formatted(cardDetailsDto.columnName())));
             cardDao.moveToColumn(cardIdToCancel, cancelColumnId);
+            connection.commit();
+        } catch (SQLException ex) {
+            connection.rollback();
+            throw ex;
+        }
+    }
+
+    public void block(final Long cardIdToBlock,
+                      final String blockingReason,
+                      final List<BoardColumnInfoDTO> boardColumnInfoDtoList) throws SQLException {
+        try {
+            var cardDao = new CardDAO(connection);
+            var optionalCardDetailsDto = cardDao.findCardById(cardIdToBlock);
+            var cardDetailsDto = optionalCardDetailsDto.orElseThrow(() ->
+                    new RuntimeException("Not found - Card ID %d".formatted(cardIdToBlock)));
+            if(cardDetailsDto.blocked()) {
+                throw new RuntimeException("Card is already blocked - Card ID %d".formatted(cardIdToBlock));
+            }
+            var currentColumnInfoDto = boardColumnInfoDtoList.stream()
+                    .filter(bcinfoDto -> bcinfoDto.id().equals(cardDetailsDto.columnId()))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalStateException("Informed card belongs to another board"));
+            if(currentColumnInfoDto.kind().equals(FINAL) || currentColumnInfoDto.kind().equals(CANCEL)) {
+                throw new IllegalStateException(
+                        "Card is in %s Column.\nCant be blocked.\n".formatted(currentColumnInfoDto.kind()));
+            }
+            new BlockDAO(connection).blockCard(cardIdToBlock, blockingReason);
             connection.commit();
         } catch (SQLException ex) {
             connection.rollback();
